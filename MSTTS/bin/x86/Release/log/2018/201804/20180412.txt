@@ -1,0 +1,96 @@
+
+ 
+记录时间：2018-04-12 15:33:02,593 
+线程ID:[9] 
+日志级别：  ERROR 
+出错类：MSTTS.Program property: [(null)] - 
+错误描述：语音服务启动！
+ 
+
+ 
+记录时间：2018-04-12 15:33:41,722 
+线程ID:[9] 
+日志级别：  ERROR 
+出错类：MSTTS.Program property: [(null)] - 
+错误描述：语音服务启动！
+ 
+
+ 
+记录时间：2018-04-12 15:36:15,627 
+线程ID:[9] 
+日志级别：  ERROR 
+出错类：MSTTS.Program property: [(null)] - 
+错误描述：语音服务启动！
+ 
+
+ 
+记录时间：2018-04-12 15:39:55,141 
+线程ID:[9] 
+日志级别：  ERROR 
+出错类：MSTTS.Program property: [(null)] - 
+错误描述：语音服务启动！
+ 
+
+ 
+记录时间：2018-04-12 15:39:55,368 
+线程ID:[18] 
+日志级别：  ERROR 
+出错类：MSTTS.Program property: [(null)] - 
+错误描述：MQ接收信息打印：PACKTYPE~TTS|CONTENT~今天天气不错|FILE~131679923832339250.wav
+ 
+
+ 
+记录时间：2018-04-12 15:40:51,951 
+线程ID:[9] 
+日志级别：  ERROR 
+出错类：MSTTS.Program property: [(null)] - 
+错误描述：语音服务启动！
+ 
+
+ 
+记录时间：2018-04-12 15:41:18,848 
+线程ID:[16] 
+日志级别：  ERROR 
+出错类：MSTTS.Program property: [(null)] - 
+错误描述：MQ接收信息打印：PACKTYPE~TTS|CONTENT~今天天气不错|FILE~131679924780563251.wav
+ 
+
+ 
+记录时间：2018-04-12 15:41:51,944 
+线程ID:[16] 
+日志级别：  ERROR 
+出错类：MSTTS.Program property: [(null)] - 
+错误描述：MQ接收信息打印：PACKTYPE~TTS|CONTENT~今天天气不错|FILE~131679925111595253.wav
+ 
+
+ 
+记录时间：2018-04-12 15:44:38,110 
+线程ID:[16] 
+日志级别：  ERROR 
+出错类：MSTTS.Program property: [(null)] - 
+错误描述：MQ接收信息打印：PACKTYPE~TTS|CONTENT~今天天气不错|FILE~131679926773371263.wav
+ 
+
+ 
+记录时间：2018-04-12 15:49:33,819 
+线程ID:[9] 
+日志级别：  ERROR 
+出错类：MSTTS.Program property: [(null)] - 
+错误描述：语音服务启动！
+ 
+
+ 
+记录时间：2018-04-12 15:57:05,194 
+线程ID:[9] 
+日志级别：  ERROR 
+出错类：MSTTS.Program property: [(null)] - 
+错误描述：语音服务启动！
+ 
+
+ 
+记录时间：2018-04-12 15:57:25,810 
+线程ID:[10] 
+日志级别：  ERROR 
+出错类：MSTTS.Program property: [(null)] - 
+错误描述：语音服务启动！
+ 
