@@ -6,3 +6,12 @@ D:\ProjectDoc\software\TTSServer\winform版本语音服务\MSTTS\MSTTS\bin\x86\R
 D:\ProjectDoc\software\TTSServer\winform版本语音服务\MSTTS\MSTTS\bin\x86\Release\MSTTS.pdb
 D:\ProjectDoc\software\TTSServer\winform版本语音服务\MSTTS\MSTTS\obj\x86\Release\MSTTS.exe
 D:\ProjectDoc\software\TTSServer\winform版本语音服务\MSTTS\MSTTS\obj\x86\Release\MSTTS.pdb
+E:\GitHub\MSTTS\MSTTS\bin\x86\Release\MSTTS.exe.config
+E:\GitHub\MSTTS\MSTTS\obj\x86\Release\MSTTS.exe
+E:\GitHub\MSTTS\MSTTS\obj\x86\Release\MSTTS.pdb
+E:\GitHub\MSTTS\MSTTS\bin\x86\Release\MSTTS.exe
+E:\GitHub\MSTTS\MSTTS\bin\x86\Release\MSTTS.pdb
+E:\GitHub\MSTTS\MSTTS\obj\x86\Release\MSTTS.csprojResolveAssemblyReference.cache
+E:\GitHub\MSTTS\MSTTS\obj\x86\Release\MSTTS.MainForm.resources
+E:\GitHub\MSTTS\MSTTS\obj\x86\Release\MSTTS.Properties.Resources.resources
+E:\GitHub\MSTTS\MSTTS\obj\x86\Release\MSTTS.csproj.GenerateResource.Cache
