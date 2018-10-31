@@ -11,7 +11,9 @@ E:\GitHub\MSTTS\MSTTS\obj\x86\Release\MSTTS.exe
 E:\GitHub\MSTTS\MSTTS\obj\x86\Release\MSTTS.pdb
 E:\GitHub\MSTTS\MSTTS\bin\x86\Release\MSTTS.exe
 E:\GitHub\MSTTS\MSTTS\bin\x86\Release\MSTTS.pdb
-E:\GitHub\MSTTS\MSTTS\obj\x86\Release\MSTTS.csprojResolveAssemblyReference.cache
 E:\GitHub\MSTTS\MSTTS\obj\x86\Release\MSTTS.MainForm.resources
 E:\GitHub\MSTTS\MSTTS\obj\x86\Release\MSTTS.Properties.Resources.resources
 E:\GitHub\MSTTS\MSTTS\obj\x86\Release\MSTTS.csproj.GenerateResource.Cache
+E:\GitHub\MSTTS\MSTTS\obj\x86\Release\MSTTS.csprojAssemblyReference.cache
+E:\GitHub\MSTTS\MSTTS\obj\x86\Release\MSTTS.csproj.CoreCompileInputs.cache
+E:\GitHub\MSTTS\MSTTS\obj\x86\Release\MSTTS.csproj.CopyComplete
