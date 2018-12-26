@@ -80,6 +80,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Class\SingletonInfo.cs" />
     <Compile Include="IniFiles.cs" />
     <Compile Include="LogHelper.cs" />
     <Compile Include="MainForm.cs">

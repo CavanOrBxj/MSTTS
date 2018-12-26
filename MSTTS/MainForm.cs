@@ -7,6 +7,7 @@ using System.Data;
 using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -17,72 +18,81 @@ namespace MSTTS
     public partial class MainForm : Form
     {
         public static IniFiles ini;
-        private MQ m_mq = null;
-        
+        private MQ m_mq = null;     
         private IMessageConsumer m_consumer;
         private bool isConn = false; //是否已与MQ服务器正常连接
-
-
-      
-        private string _path = "";
-        private int _rate = 0;
-
-        private string MQIP = "";
-        private string MQPORT = "";
-        private string MQUSER = "";
-        private string MQWD = "";
-        private int  StartDelay=0;
-
-        private string TopicName1 = "";
-        private string TopicName2 = "";
-
-        private int _nFrontPackCnt = 0;
-        private int _nTailPackCnt = 0;
-
         public delegate void LogAppendDelegate(string text);
-
         private System.Timers.Timer tm;
 
         public MainForm()
         {
             InitializeComponent();
             this.Load += MainForm_Load;
-            
-
         }
 
         void MainForm_Load(object sender, EventArgs e)
         {
             CheckIniConfig();
 
-            Thread.Sleep(StartDelay);
+            Thread.Sleep(SingletonInfo.GetInstance().StartDelay);
             LogHelper.WriteLog(typeof(Program), "语音服务启动！");
             LogMessage("语音服务启动！");
-
             DealMqConnection();
-            tm = new System.Timers.Timer();
-            tm.Interval = 15000;
-            tm.Enabled = true;
-            tm.Elapsed += tm_Elapsed;
+            if (isConn)
+            {
+                tm = new System.Timers.Timer();
+                tm.Interval = SingletonInfo.GetInstance().CheckMQInterval;
+                tm.Enabled = true;
+                tm.Elapsed += tm_Elapsed;
+            }
+
         }
 
         void tm_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
         {
-            Open_consumer(TopicName1);  
+            try
+            {
+                if (GetActiveMQConnection(SingletonInfo.GetInstance().CheckMQURL))
+                {
+                    //连接正常
+                    if (!isConn)
+                    {
+                        DealMqConnection();
+                    }
+                }
+                else
+                {
+                    //连接异常
+                    m_consumer.Close();
+                    m_mq.Close();
+                    m_mq = null;
+                    GC.Collect();
+                    DealMqConnection();
+
+                }
+            }
+            catch 
+            {
+            }
         }
 
-
+        /// <summary>
+        /// 处理MQ登录信息
+        /// </summary>
         private void DealMqConnection()
         {
 
-            if (OpenMQ(MQIP, MQPORT, MQUSER, MQWD))
+            if (OpenMQ(SingletonInfo.GetInstance().MQURL, SingletonInfo.GetInstance().MQUSER, SingletonInfo.GetInstance().MQWD))
             {
-                Open_consumer(TopicName1);             //创建消息消费者
-                m_mq.CreateProducer(false, TopicName2);//创建消息生产者   //Queue
+                Open_consumer(SingletonInfo.GetInstance().TopicName1);             //创建消息消费者
+                m_mq.CreateProducer(false, SingletonInfo.GetInstance().TopicName2);//创建消息生产者   //Queue
+
+                isConn = true;
             }
             else
             {
                 LogMessage("MQ连接失败！");
+                isConn = false ;
             }
         }
 
@@ -102,8 +112,7 @@ namespace MSTTS
         {
             LogAppendDelegate la = new LogAppendDelegate(LogAppend);
             richTextRebackMsg.Invoke(la,text);
-        } 
-
+        }
         
         private bool CheckIniConfig()
         {
@@ -111,19 +120,18 @@ namespace MSTTS
             {
                 string iniPath = Path.Combine(Application.StartupPath, "MSTTS.ini");
                 ini = new IniFiles(iniPath);
-                MQIP = ini.ReadValue("MQ", "MQIP");
-                MQPORT = ini.ReadValue("MQ", "MQPORT");
-                MQUSER = ini.ReadValue("MQ", "MQUSER");
-                MQWD = ini.ReadValue("MQ", "MQPWD");
-                TopicName1 = ini.ReadValue("MQ", "RECTOPIC");
-                TopicName2 = ini.ReadValue("MQ", "SENDTOPIC");
-
-                StartDelay = Convert.ToInt32(ini.ReadValue("MQ", "StartDelay").ToString())*1000;
-
-                _path = ini.ReadValue("MQ", "path");
-                _rate = Convert.ToInt32(ini.ReadValue("MQ", "rate"));
-                _nFrontPackCnt = Convert.ToInt32(ini.ReadValue("MQ", "nFrontPackCnt"));
-                _nTailPackCnt = Convert.ToInt32(ini.ReadValue("MQ", "nTailPackCnt"));
+                SingletonInfo.GetInstance().MQURL = ini.ReadValue("MQ", "URL");
+                SingletonInfo.GetInstance().CheckMQURL = ini.ReadValue("MQ", "MQtestURL");
+                SingletonInfo.GetInstance().MQUSER = ini.ReadValue("MQ", "MQUSER");
+                SingletonInfo.GetInstance().MQWD = ini.ReadValue("MQ", "MQPWD");
+                SingletonInfo.GetInstance().TopicName1 = ini.ReadValue("MQ", "RECTOPIC");
+                SingletonInfo.GetInstance().TopicName2 = ini.ReadValue("MQ", "SENDTOPIC");
+                SingletonInfo.GetInstance().StartDelay = Convert.ToInt32(ini.ReadValue("MQ", "StartDelay").ToString()) * 1000;
+                SingletonInfo.GetInstance()._path = ini.ReadValue("MQ", "path");
+                SingletonInfo.GetInstance()._rate = Convert.ToInt32(ini.ReadValue("MQ", "rate"));
+                SingletonInfo.GetInstance()._nFrontPackCnt = Convert.ToInt32(ini.ReadValue("MQ", "nFrontPackCnt"));
+                SingletonInfo.GetInstance()._nTailPackCnt = Convert.ToInt32(ini.ReadValue("MQ", "nTailPackCnt"));
+                SingletonInfo.GetInstance().CheckMQInterval = Convert.ToInt32(ini.ReadValue("MQ", "CheckMQInterval")) * 1000;
             }
             catch (Exception ex)
             {
@@ -134,12 +142,14 @@ namespace MSTTS
         }
 
 
-        private bool OpenMQ(string _MQIP, string _MQPort, string _MQUser, string _MQPWD)
+        private bool OpenMQ(string _MQURL,string _MQUser, string _MQPWD)
         {
             string txtURI = "";
-            txtURI = "tcp://" + _MQIP + ":" + _MQPort;
+            txtURI = _MQURL;
             try
             {
+                m_mq = null;//多次连接后会建立多个消费者
+                GC.Collect();
                 m_mq = new MQ();
                 m_mq.uri = txtURI;
                 m_mq.username = _MQUser;
@@ -178,7 +188,6 @@ namespace MSTTS
         private void consumer_listener(IMessage message)
         {
             string strMsg;
-
             try
             {
                 ITextMessage msg = (ITextMessage)message;
@@ -199,7 +208,7 @@ namespace MSTTS
                         }
                         if (item.Contains("FILE"))
                         {
-                            file = _path + "\\" + item.Split('~')[1];
+                            file = SingletonInfo.GetInstance()._path + "\\" + item.Split('~')[1];
                         }
                     }
                     SaveFile(file, contenettmp);
@@ -221,7 +230,7 @@ namespace MSTTS
                 DelFile(FileName);
                 SpeechVoiceSpeakFlags SpFlags = SpeechVoiceSpeakFlags.SVSFlagsAsync;
                 SpVoice Voice = new SpVoice();
-                Voice.Rate = _rate;
+                Voice.Rate = SingletonInfo.GetInstance()._rate;
                 string filename = FileName;
 
 
@@ -240,8 +249,8 @@ namespace MSTTS
 
                 SpFileStream.Close();
 
-                int nFrontPackCnt = _nFrontPackCnt;
-                int nTailPackCnt =  _nTailPackCnt;
+                int nFrontPackCnt = SingletonInfo.GetInstance()._nFrontPackCnt;
+                int nTailPackCnt = SingletonInfo.GetInstance()._nTailPackCnt;
                 int de = NativeMethods.InsertBlankAudio(filename, filenametmp, nFrontPackCnt, nTailPackCnt);
 
 
@@ -295,6 +304,35 @@ namespace MSTTS
                 LogHelper.WriteLog(typeof(Program), "删除中间文件：" + str + "失败！");
             }
 
+        }
+
+        public bool GetActiveMQConnection(string Url)
+        {
+            bool flag = false;
+            try
+            {
+                HttpWebRequest request = (HttpWebRequest)WebRequest.Create(Url);
+                request.Proxy = null;
+                request.KeepAlive = false;
+                request.Method = "GET";
+                request.ContentType = "application/json; charset=UTF-8";
+                request.AutomaticDecompression = DecompressionMethods.GZip;
+
+                HttpWebResponse response = (HttpWebResponse)request.GetResponse();
+
+                if (response != null)
+                {
+                    response.Close();
+                    request.Abort();
+                    flag = true;
+                }
+            }
+            catch
+            {
+                return false;
+            }
+
+            return flag;
         }
     }
 }
