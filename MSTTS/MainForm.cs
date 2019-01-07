@@ -24,6 +24,8 @@ namespace MSTTS
         public delegate void LogAppendDelegate(string text);
         private System.Timers.Timer tm;
 
+        private static FTPHelper ftphelper;
+
         public MainForm()
         {
             InitializeComponent();
@@ -33,7 +35,10 @@ namespace MSTTS
         void MainForm_Load(object sender, EventArgs e)
         {
             CheckIniConfig();
-
+            if (SingletonInfo.GetInstance().FTPEnable)
+            {
+                InitFTPServer();
+            }
             Thread.Sleep(SingletonInfo.GetInstance().StartDelay);
             LogHelper.WriteLog(typeof(Program), "语音服务启动！");
             LogMessage("语音服务启动！");
@@ -46,6 +51,15 @@ namespace MSTTS
                 tm.Elapsed += tm_Elapsed;
             }
 
+        }
+
+
+        private void InitFTPServer()
+        {
+            string ftpserver = ini.ReadValue("FTPServer", "ftpserver");
+            string ftpusername = ini.ReadValue("FTPServer", "ftpusername");
+            string ftppwd = ini.ReadValue("FTPServer", "ftppwd");
+            ftphelper = new FTPHelper(ftpserver, ftpusername, ftppwd);
         }
 
         void tm_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
@@ -132,6 +146,7 @@ namespace MSTTS
                 SingletonInfo.GetInstance()._nFrontPackCnt = Convert.ToInt32(ini.ReadValue("MQ", "nFrontPackCnt"));
                 SingletonInfo.GetInstance()._nTailPackCnt = Convert.ToInt32(ini.ReadValue("MQ", "nTailPackCnt"));
                 SingletonInfo.GetInstance().CheckMQInterval = Convert.ToInt32(ini.ReadValue("MQ", "CheckMQInterval")) * 1000;
+                SingletonInfo.GetInstance().FTPEnable = ini.ReadValue("FTPServer", "ftpEnable") == "0" ? false : true;
             }
             catch (Exception ex)
             {
@@ -262,7 +277,14 @@ namespace MSTTS
                 string filenamesignal = filepathname[filepathname.Length - 1];
                 string senddata = "PACKETTYPE~TTS|FILE~" + filenamesignal + "|TIME~" + ((uint)dirTime).ToString();
                 LogMessage(senddata);
-
+                #region ftp文件传输  20190107新增
+                if (SingletonInfo.GetInstance().FTPEnable)
+                {
+                    string ftppath = filenamesignal;
+                    string path = filename;
+                    ftphelper.UploadFile(path, ftppath);
+                }
+                #endregion
                 SendMQMessage(senddata);
             }
             catch (Exception ex)

@@ -26,6 +26,7 @@ namespace MSTTS
         public int _nTailPackCnt;// 生成的音频文件的结束的空白期的长度
 
         public int CheckMQInterval;//检查MQ是否工作的周期
+        public bool FTPEnable;//FTP传输使能
 
 
         private SingletonInfo()                                                                 
@@ -43,6 +44,7 @@ namespace MSTTS
             _nFrontPackCnt = 0;
             _nTailPackCnt = 0;
             CheckMQInterval = 0;
+            FTPEnable = false;
         }
         public static SingletonInfo GetInstance()
         {

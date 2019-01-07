@@ -16,4 +16,3 @@ E:\GitHub\MSTTS\MSTTS\obj\x86\Release\MSTTS.Properties.Resources.resources
 E:\GitHub\MSTTS\MSTTS\obj\x86\Release\MSTTS.csproj.GenerateResource.Cache
 E:\GitHub\MSTTS\MSTTS\obj\x86\Release\MSTTS.csproj.CoreCompileInputs.cache
 E:\GitHub\MSTTS\MSTTS\obj\x86\Release\MSTTS.csproj.CopyComplete
-E:\GitHub\MSTTS\MSTTS\obj\x86\Release\MSTTS.csprojAssemblyReference.cache
