@@ -1,9 +1,11 @@
 ﻿using Apache.NMS;
 using SpeechLib;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
+using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
@@ -25,15 +27,42 @@ namespace MSTTS
         private System.Timers.Timer tm;
 
         private static FTPHelper ftphelper;
+        private ConcurrentQueue<string> AnalysisQueue;//收到来自MQ的消息队列
 
         public MainForm()
         {
             InitializeComponent();
+
+            //--------------------------只运行一个--------------------------------------------------
+            bool flag = CheckSameProcess();
+            if (flag)
+            {
+                MessageBox.Show("只能运行一个程序！", "请确定", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                Environment.Exit(0);//退出程序  
+                //Application.Exit();
+            }
             this.Load += MainForm_Load;
+        }
+
+
+        /// <summary>
+        /// 检查是否存在同名进程
+        /// </summary>
+        /// <returns></returns>
+        private bool CheckSameProcess()
+        {
+            bool flag = false;
+            Process[] ps = Process.GetProcessesByName("MSTTS");
+            if (ps.Length>1)
+            {
+                flag = true;
+            }
+            return flag;
         }
 
         void MainForm_Load(object sender, EventArgs e)
         {
+            AnalysisQueue = new ConcurrentQueue<string>();
             CheckIniConfig();
             if (SingletonInfo.GetInstance().FTPEnable)
             {
@@ -50,7 +79,9 @@ namespace MSTTS
                 tm.Enabled = true;
                 tm.Elapsed += tm_Elapsed;
             }
-
+            this.Text = "语音服务V_" + Application.ProductVersion;
+            Thread pp = new Thread(Dealqueue);
+            pp.Start();
         }
 
 
@@ -190,7 +221,7 @@ namespace MSTTS
                     m_consumer = null;
                     GC.Collect();
                 }
-                m_consumer = m_mq.CreateConsumer(false, _MQRecTopic);
+                m_consumer = m_mq.CreateConsumer(false, _MQRecTopic);//表示是queue模式 20190215
                 m_consumer.Listener += new MessageListener(consumer_listener);
             }
             catch (System.Exception ex)
@@ -199,7 +230,10 @@ namespace MSTTS
             }
         }
 
-
+        /// <summary>
+        /// 消费MQ消息
+        /// </summary>
+        /// <param name="message"></param>
         private void consumer_listener(IMessage message)
         {
             string strMsg;
@@ -209,25 +243,8 @@ namespace MSTTS
                 strMsg = msg.Text;
                 LogHelper.WriteLog(typeof(Program), "MQ接收信息打印：" + strMsg);
                 LogMessage("MQ接收信息打印：" + strMsg);
-                string contenettmp = "";
-                string file = "";
-
-                if (strMsg.Contains("PACKTYPE") && strMsg.Contains("CONTENT") && strMsg.Contains("FILE"))//防止误收
-                {
-                    string[] commandsection = strMsg.Split('|');
-                    foreach (string item in commandsection)
-                    {
-                        if (item.Contains("CONTENT"))
-                        {
-                            contenettmp = item.Split('~')[1];
-                        }
-                        if (item.Contains("FILE"))
-                        {
-                            file = SingletonInfo.GetInstance()._path + "\\" + item.Split('~')[1];
-                        }
-                    }
-                    SaveFile(file, contenettmp);
-                }
+                Application.DoEvents();
+                AnalysisQueue.Enqueue(strMsg);
             }
             catch (System.Exception ex)
             {
@@ -237,18 +254,51 @@ namespace MSTTS
             }
         }
 
+
+        #region  循环处理队列信息
+        private void Dealqueue()
+        {
+
+            while (true)
+            {
+                if (!AnalysisQueue.IsEmpty)
+                {
+                    string strMsg;
+                    AnalysisQueue.TryDequeue(out strMsg); //拿出数据
+                    string contenettmp = "";
+                    string file = "";
+
+                    if (strMsg.Contains("PACKTYPE") && strMsg.Contains("CONTENT") && strMsg.Contains("FILE"))//防止误收
+                    {
+                        string[] commandsection = strMsg.Split('|');
+                        foreach (string item in commandsection)
+                        {
+                            if (item.Contains("CONTENT"))
+                            {
+                                contenettmp = item.Split('~')[1];
+                            }
+                            if (item.Contains("FILE"))
+                            {
+                                file = SingletonInfo.GetInstance()._path + "\\" + item.Split('~')[1];
+                            }
+                        }
+                        SaveFile(file, contenettmp);
+                    }
+                }
+            }
+       
+        }
+
+        #endregion
         private void SaveFile(string FileName, string Content)
         {
             try
             {
-
                 DelFile(FileName);
                 SpeechVoiceSpeakFlags SpFlags = SpeechVoiceSpeakFlags.SVSFlagsAsync;
                 SpVoice Voice = new SpVoice();
                 Voice.Rate = SingletonInfo.GetInstance()._rate;
                 string filename = FileName;
-
-
                 string filenametmp = FileName.Split('.')[0] + "tmp.wav";
 
                 string texttxt = Content;
@@ -282,7 +332,7 @@ namespace MSTTS
                 {
                     string ftppath = filenamesignal;
                     string path = filename;
-                    ftphelper.UploadFile(path, ftppath);
+                    ftphelper.UploadFile(path, ftppath);//阻塞式非线程模式
                 }
                 #endregion
                 SendMQMessage(senddata);

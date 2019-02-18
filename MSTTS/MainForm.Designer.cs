@@ -49,6 +49,7 @@
             this.ClientSize = new System.Drawing.Size(654, 426);
             this.Controls.Add(this.richTextRebackMsg);
             this.Name = "MainForm";
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "语音服务";
             this.ResumeLayout(false);
 
