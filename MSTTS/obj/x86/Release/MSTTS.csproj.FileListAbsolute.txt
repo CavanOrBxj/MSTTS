@@ -16,3 +16,14 @@ E:\GitHub\MSTTS\MSTTS\obj\x86\Release\MSTTS.csproj.CoreCompileInputs.cache
 E:\GitHub\MSTTS\MSTTS\obj\x86\Release\MSTTS.csproj.CopyComplete
 E:\GitHub\MSTTS\MSTTS\obj\x86\Release\MSTTS.exe
 E:\GitHub\MSTTS\MSTTS\obj\x86\Release\MSTTS.pdb
+E:\GitHub\MSTTS\MSTTS\obj\x86\Release\MSTTS.csprojAssemblyReference.cache
+D:\支持\MSTTS\MSTTS\bin\x86\Release\MSTTS.exe.config
+D:\支持\MSTTS\MSTTS\bin\x86\Release\MSTTS.exe
+D:\支持\MSTTS\MSTTS\bin\x86\Release\MSTTS.pdb
+D:\支持\MSTTS\MSTTS\obj\x86\Release\MSTTS.MainForm.resources
+D:\支持\MSTTS\MSTTS\obj\x86\Release\MSTTS.Properties.Resources.resources
+D:\支持\MSTTS\MSTTS\obj\x86\Release\MSTTS.csproj.GenerateResource.cache
+D:\支持\MSTTS\MSTTS\obj\x86\Release\MSTTS.csproj.CoreCompileInputs.cache
+D:\支持\MSTTS\MSTTS\obj\x86\Release\MSTTS.csproj.CopyComplete
+D:\支持\MSTTS\MSTTS\obj\x86\Release\MSTTS.exe
+D:\支持\MSTTS\MSTTS\obj\x86\Release\MSTTS.pdb

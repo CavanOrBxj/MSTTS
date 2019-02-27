@@ -72,13 +72,13 @@ namespace MSTTS
             LogHelper.WriteLog(typeof(Program), "语音服务启动！");
             LogMessage("语音服务启动！");
             DealMqConnection();
-            if (isConn)
-            {
+            //if (isConn)
+            //{
                 tm = new System.Timers.Timer();
                 tm.Interval = SingletonInfo.GetInstance().CheckMQInterval;
                 tm.Enabled = true;
                 tm.Elapsed += tm_Elapsed;
-            }
+           // }
             this.Text = "语音服务V_" + Application.ProductVersion;
             Thread pp = new Thread(Dealqueue);
             pp.Start();
@@ -107,6 +107,7 @@ namespace MSTTS
                 }
                 else
                 {
+                    isConn = false;
                     //连接异常
                     m_consumer.Close();
                     m_mq.Close();
@@ -116,8 +117,14 @@ namespace MSTTS
 
                 }
             }
-            catch 
+            catch(Exception  ex) 
             {
+                isConn = false;
+                //连接异常
+                m_consumer.Close();
+                m_mq.Close();
+                m_mq = null;
+                GC.Collect();
             }
         }
 
@@ -131,7 +138,7 @@ namespace MSTTS
             {
                 Open_consumer(SingletonInfo.GetInstance().TopicName1);             //创建消息消费者
                 m_mq.CreateProducer(false, SingletonInfo.GetInstance().TopicName2);//创建消息生产者   //Queue
-
+                LogMessage("MQ连接成功！");
                 isConn = true;
             }
             else
@@ -148,8 +155,11 @@ namespace MSTTS
         /// <param name="text">显示文本</param> 
         public void LogAppend(string text)
         {
-            richTextRebackMsg.AppendText("\n");
-            richTextRebackMsg.AppendText(text);
+            if (this.IsHandleCreated)
+            {
+                richTextRebackMsg.AppendText("\n");
+                richTextRebackMsg.AppendText(text);
+            }
         }
 
 
@@ -389,7 +399,7 @@ namespace MSTTS
                 request.Method = "GET";
                 request.ContentType = "application/json; charset=UTF-8";
                 request.AutomaticDecompression = DecompressionMethods.GZip;
-
+                request.Timeout = 2000;
                 HttpWebResponse response = (HttpWebResponse)request.GetResponse();
 
                 if (response != null)
@@ -399,7 +409,7 @@ namespace MSTTS
                     flag = true;
                 }
             }
-            catch
+            catch(Exception ex)
             {
                 return false;
             }
