@@ -28,6 +28,8 @@ namespace MSTTS
         public int CheckMQInterval;//检查MQ是否工作的周期
         public bool FTPEnable;//FTP传输使能
 
+        public int FaultTime;//MQ消息容错时间  秒
+
 
         private SingletonInfo()                                                                 
         {
@@ -44,6 +46,7 @@ namespace MSTTS
             _nFrontPackCnt = 0;
             _nTailPackCnt = 0;
             CheckMQInterval = 0;
+            FaultTime = 0;
             FTPEnable = false;
         }
         public static SingletonInfo GetInstance()

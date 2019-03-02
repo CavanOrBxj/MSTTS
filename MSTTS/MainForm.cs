@@ -107,13 +107,17 @@ namespace MSTTS
                 }
                 else
                 {
+                    LogMessage("MQ服务器未连接！");
                     isConn = false;
                     //连接异常
                     m_consumer.Close();
-                    m_mq.Close();
+                    if (m_mq!=null)
+                    {
+                        m_mq.Close();
+                    }
                     m_mq = null;
                     GC.Collect();
-                    DealMqConnection();
+                  //  DealMqConnection();    测试注释  20190302
 
                 }
             }
@@ -122,7 +126,10 @@ namespace MSTTS
                 isConn = false;
                 //连接异常
                 m_consumer.Close();
-                m_mq.Close();
+                if (m_mq!=null)
+                {
+                    m_mq.Close();
+                }
                 m_mq = null;
                 GC.Collect();
             }
@@ -188,6 +195,7 @@ namespace MSTTS
                 SingletonInfo.GetInstance()._nTailPackCnt = Convert.ToInt32(ini.ReadValue("MQ", "nTailPackCnt"));
                 SingletonInfo.GetInstance().CheckMQInterval = Convert.ToInt32(ini.ReadValue("MQ", "CheckMQInterval")) * 1000;
                 SingletonInfo.GetInstance().FTPEnable = ini.ReadValue("FTPServer", "ftpEnable") == "0" ? false : true;
+                SingletonInfo.GetInstance().FaultTime = Convert.ToInt32(ini.ReadValue("FaultTime", "time")) * 60;
             }
             catch (Exception ex)
             {
@@ -249,8 +257,19 @@ namespace MSTTS
             string strMsg;
             try
             {
+                DateTime pp = message.NMSTimestamp;
                 ITextMessage msg = (ITextMessage)message;
                 strMsg = msg.Text;
+                TimeSpan ts1 = new TimeSpan(pp.Ticks);
+                TimeSpan ts2 = new TimeSpan(DateTime.Now.Ticks);
+                TimeSpan ts3 = ts2.Subtract(ts1); //ts2-ts1
+                int sumSeconds = Convert.ToInt32(ts3.TotalSeconds.ToString().Split('.')[0]); //得到相差秒数  
+                if (sumSeconds > SingletonInfo.GetInstance().FaultTime) //判断时间差是不是大于给定值
+                {
+                    LogHelper.WriteLog(typeof(Program), "MQ过时信息打印：" + strMsg);
+                    return;
+                }
+
                 LogHelper.WriteLog(typeof(Program), "MQ接收信息打印：" + strMsg);
                 LogMessage("MQ接收信息打印：" + strMsg);
                 Application.DoEvents();
@@ -268,7 +287,6 @@ namespace MSTTS
         #region  循环处理队列信息
         private void Dealqueue()
         {
-
             while (true)
             {
                 if (!AnalysisQueue.IsEmpty)
@@ -294,6 +312,10 @@ namespace MSTTS
                         }
                         SaveFile(file, contenettmp);
                     }
+                }
+                else
+                {
+                    Thread.Sleep(500);
                 }
             }
        
