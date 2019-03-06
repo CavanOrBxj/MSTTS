@@ -19,15 +19,12 @@ namespace MSTTS
 {
     public partial class MainForm : Form
     {
-        public static IniFiles ini;
-        private MQ m_mq = null;     
+        public static IniFiles ini; 
         private IMessageConsumer m_consumer;
         private bool isConn = false; //是否已与MQ服务器正常连接
         public delegate void LogAppendDelegate(string text);
         private System.Timers.Timer tm;
-
-        private static FTPHelper ftphelper;
-        private ConcurrentQueue<string> AnalysisQueue;//收到来自MQ的消息队列
+       // private static object _lock = new object();
 
         public MainForm()
         {
@@ -62,14 +59,13 @@ namespace MSTTS
 
         void MainForm_Load(object sender, EventArgs e)
         {
-            AnalysisQueue = new ConcurrentQueue<string>();
             CheckIniConfig();
             if (SingletonInfo.GetInstance().FTPEnable)
             {
                 InitFTPServer();
             }
             Thread.Sleep(SingletonInfo.GetInstance().StartDelay);
-            LogHelper.WriteLog(typeof(Program), "语音服务启动！");
+            LogHelper.WriteLog(typeof(MainForm), "语音服务启动！");
             LogMessage("语音服务启动！");
             DealMqConnection();
             //if (isConn)
@@ -80,8 +76,6 @@ namespace MSTTS
                 tm.Elapsed += tm_Elapsed;
            // }
             this.Text = "语音服务V_" + Application.ProductVersion;
-            Thread pp = new Thread(Dealqueue);
-            pp.Start();
         }
 
 
@@ -90,7 +84,7 @@ namespace MSTTS
             string ftpserver = ini.ReadValue("FTPServer", "ftpserver");
             string ftpusername = ini.ReadValue("FTPServer", "ftpusername");
             string ftppwd = ini.ReadValue("FTPServer", "ftppwd");
-            ftphelper = new FTPHelper(ftpserver, ftpusername, ftppwd);
+            SingletonInfo.GetInstance().ftphelper = new FTPHelper(ftpserver, ftpusername, ftppwd);
         }
 
         void tm_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
@@ -108,17 +102,16 @@ namespace MSTTS
                 else
                 {
                     LogMessage("MQ服务器未连接！");
+                    LogHelper.WriteLog(typeof(MainForm), "打开MQ网站出错");//日志测试  20180319
                     isConn = false;
                     //连接异常
                     m_consumer.Close();
-                    if (m_mq!=null)
+                    if (SingletonInfo.GetInstance().m_mq!=null)
                     {
-                        m_mq.Close();
+                        SingletonInfo.GetInstance().m_mq.Close();
                     }
-                    m_mq = null;
+                    SingletonInfo.GetInstance().m_mq = null;
                     GC.Collect();
-                  //  DealMqConnection();    测试注释  20190302
-
                 }
             }
             catch(Exception  ex) 
@@ -126,11 +119,11 @@ namespace MSTTS
                 isConn = false;
                 //连接异常
                 m_consumer.Close();
-                if (m_mq!=null)
+                if (SingletonInfo.GetInstance().m_mq != null)
                 {
-                    m_mq.Close();
+                    SingletonInfo.GetInstance().m_mq.Close();
                 }
-                m_mq = null;
+                SingletonInfo.GetInstance().m_mq = null;
                 GC.Collect();
             }
         }
@@ -144,7 +137,7 @@ namespace MSTTS
             if (OpenMQ(SingletonInfo.GetInstance().MQURL, SingletonInfo.GetInstance().MQUSER, SingletonInfo.GetInstance().MQWD))
             {
                 Open_consumer(SingletonInfo.GetInstance().TopicName1);             //创建消息消费者
-                m_mq.CreateProducer(false, SingletonInfo.GetInstance().TopicName2);//创建消息生产者   //Queue
+                SingletonInfo.GetInstance().m_mq.CreateProducer(false, SingletonInfo.GetInstance().TopicName2);//创建消息生产者   //Queue
                 LogMessage("MQ连接成功！");
                 isConn = true;
             }
@@ -212,13 +205,13 @@ namespace MSTTS
             txtURI = _MQURL;
             try
             {
-                m_mq = null;//多次连接后会建立多个消费者
+                SingletonInfo.GetInstance().m_mq = null;//多次连接后会建立多个消费者
                 GC.Collect();
-                m_mq = new MQ();
-                m_mq.uri = txtURI;
-                m_mq.username = _MQUser;
-                m_mq.password = _MQPWD;
-                m_mq.Start();
+                SingletonInfo.GetInstance().m_mq = new MQ();
+                SingletonInfo.GetInstance().m_mq.uri = txtURI;
+                SingletonInfo.GetInstance().m_mq.username = _MQUser;
+                SingletonInfo.GetInstance().m_mq.password = _MQPWD;
+                SingletonInfo.GetInstance().m_mq.Start();
                 isConn = true;
             }
             catch (System.Exception ex)
@@ -239,7 +232,7 @@ namespace MSTTS
                     m_consumer = null;
                     GC.Collect();
                 }
-                m_consumer = m_mq.CreateConsumer(false, _MQRecTopic);//表示是queue模式 20190215
+                m_consumer = SingletonInfo.GetInstance().m_mq.CreateConsumer(false, _MQRecTopic);//表示是queue模式 20190215
                 m_consumer.Listener += new MessageListener(consumer_listener);
             }
             catch (System.Exception ex)
@@ -266,62 +259,48 @@ namespace MSTTS
                 int sumSeconds = Convert.ToInt32(ts3.TotalSeconds.ToString().Split('.')[0]); //得到相差秒数  
                 if (sumSeconds > SingletonInfo.GetInstance().FaultTime) //判断时间差是不是大于给定值
                 {
-                    LogHelper.WriteLog(typeof(Program), "MQ过时信息打印：" + strMsg);
+                    LogHelper.WriteLog(typeof(MainForm), "MQ过时信息打印：" + strMsg);
                     return;
                 }
 
-                LogHelper.WriteLog(typeof(Program), "MQ接收信息打印：" + strMsg);
+                LogHelper.WriteLog(typeof(MainForm), "MQ接收信息打印：" + strMsg);
                 LogMessage("MQ接收信息打印：" + strMsg);
                 Application.DoEvents();
-                AnalysisQueue.Enqueue(strMsg);
+                ThreadPool.QueueUserWorkItem(new WaitCallback(DealMessage), strMsg);
+
             }
             catch (System.Exception ex)
             {
                 m_consumer.Close();
-                LogHelper.WriteLog(typeof(Program), "MQ数据处理异常：" + ex.ToString());
+                LogHelper.WriteLog(typeof(MainForm), "MQ数据处理异常：" + ex.ToString());
                 GC.Collect();
             }
         }
 
-
-        #region  循环处理队列信息
-        private void Dealqueue()
+        private void DealMessage(object str)
         {
-            while (true)
-            {
-                if (!AnalysisQueue.IsEmpty)
-                {
-                    string strMsg;
-                    AnalysisQueue.TryDequeue(out strMsg); //拿出数据
-                    string contenettmp = "";
-                    string file = "";
+            string strMsg = (string)str;
+            string contenettmp = "";
+            string file = "";
 
-                    if (strMsg.Contains("PACKTYPE") && strMsg.Contains("CONTENT") && strMsg.Contains("FILE"))//防止误收
+            if (strMsg.Contains("PACKTYPE") && strMsg.Contains("CONTENT") && strMsg.Contains("FILE"))//防止误收
+            {
+                string[] commandsection = strMsg.Split('|');
+                foreach (string item in commandsection)
+                {
+                    if (item.Contains("CONTENT"))
                     {
-                        string[] commandsection = strMsg.Split('|');
-                        foreach (string item in commandsection)
-                        {
-                            if (item.Contains("CONTENT"))
-                            {
-                                contenettmp = item.Split('~')[1];
-                            }
-                            if (item.Contains("FILE"))
-                            {
-                                file = SingletonInfo.GetInstance()._path + "\\" + item.Split('~')[1];
-                            }
-                        }
-                        SaveFile(file, contenettmp);
+                        contenettmp = item.Split('~')[1];
+                    }
+                    if (item.Contains("FILE"))
+                    {
+                        file = SingletonInfo.GetInstance()._path + "\\" + item.Split('~')[1];
                     }
                 }
-                else
-                {
-                    Thread.Sleep(500);
-                }
+                SaveFile(file, contenettmp);
             }
-       
         }
 
-        #endregion
         private void SaveFile(string FileName, string Content)
         {
             try
@@ -364,14 +343,14 @@ namespace MSTTS
                 {
                     string ftppath = filenamesignal;
                     string path = filename;
-                    ftphelper.UploadFile(path, ftppath);//阻塞式非线程模式
+                    SingletonInfo.GetInstance().ftphelper.UploadFile(path, ftppath);//阻塞式非线程模式
                 }
                 #endregion
                 SendMQMessage(senddata);
             }
             catch (Exception ex)
             {
-                LogHelper.WriteLog(typeof(Program), "SaveFile处理异常：" + ex.ToString());
+                LogHelper.WriteLog(typeof(MainForm), "SaveFile处理异常：" + ex.ToString());
             }
         }
 
@@ -382,14 +361,13 @@ namespace MSTTS
             {
                 if (str != null)
                 {
-                    m_mq.SendMQMessage(str);
+                    SingletonInfo.GetInstance().m_mq.SendMQMessage(str);
                 }
             }
             catch (Exception ex)
             {
-                LogHelper.WriteLog(typeof(Program), "MQ通讯异常");
+                LogHelper.WriteLog(typeof(MainForm), "MQ通讯异常:" + ex.ToString());
             }
-
         }
 
 
@@ -405,7 +383,7 @@ namespace MSTTS
             }
             catch (Exception ex)
             {
-                LogHelper.WriteLog(typeof(Program), "删除中间文件：" + str + "失败！");
+                LogHelper.WriteLog(typeof(MainForm), "删除中间文件：" + str + "失败！");
             }
 
         }
@@ -421,7 +399,7 @@ namespace MSTTS
                 request.Method = "GET";
                 request.ContentType = "application/json; charset=UTF-8";
                 request.AutomaticDecompression = DecompressionMethods.GZip;
-                request.Timeout = 2000;
+                request.Timeout = 5000;
                 HttpWebResponse response = (HttpWebResponse)request.GetResponse();
 
                 if (response != null)

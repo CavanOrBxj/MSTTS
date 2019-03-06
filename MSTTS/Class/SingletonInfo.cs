@@ -30,6 +30,9 @@ namespace MSTTS
 
         public int FaultTime;//MQ消息容错时间  秒
 
+        public  FTPHelper ftphelper;//
+
+        public MQ m_mq;//
 
         private SingletonInfo()                                                                 
         {
@@ -48,6 +51,7 @@ namespace MSTTS
             CheckMQInterval = 0;
             FaultTime = 0;
             FTPEnable = false;
+            m_mq = null;
         }
         public static SingletonInfo GetInstance()
         {

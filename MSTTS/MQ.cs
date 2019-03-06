@@ -13,7 +13,7 @@ namespace MSTTS
         public string value;
     }
 
-    class MQ
+   public class MQ
     {
         private string URI;
         private string TOPIC;
@@ -78,7 +78,7 @@ namespace MSTTS
             }
             connection.Start();
             session = connection.CreateSession();
-            //GlobalFunction.MsgBox("与MQ服务器连接成功!");
+           // Console.WriteLine("与MQ服务器连接成功!");
         }
 
         public void Close()
