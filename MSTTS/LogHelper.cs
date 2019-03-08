@@ -28,12 +28,34 @@ namespace MSTTS
         /// </summary>
         /// <param name="t"></param>
         /// <param name="msg"></param>
-        #region static void WriteLog(Type t, string msg)
-
-        public static void WriteLog(Type t, string msg)
+        /// <param name="type">1-debug 2-Error 3-Fatal 4-Info 5-Warn </param>
+        #region static void WriteLog(Type t, string msg,string type)
+        public static void WriteLog(Type t, string msg,string type)
         {
             log4net.ILog log = log4net.LogManager.GetLogger(t);
-            log.Error(msg);
+            switch (type)
+            {
+                case "1":
+                    log.Debug(msg);
+                    break;
+
+                case "2":
+                    log.Error(msg);
+                    break;
+
+                case "3":
+                    log.Fatal(msg);
+                    break;
+
+                case "4":
+                    log.Info(msg);
+                    break;
+
+                case "5":
+                    log.Warn(msg);
+                    break;
+            }
+
         }
 
         #endregion

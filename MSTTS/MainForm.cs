@@ -65,7 +65,7 @@ namespace MSTTS
                 InitFTPServer();
             }
             Thread.Sleep(SingletonInfo.GetInstance().StartDelay);
-            LogHelper.WriteLog(typeof(MainForm), "语音服务启动！");
+            LogHelper.WriteLog(typeof(MainForm), "语音服务启动！","4");
             LogMessage("语音服务启动！");
             DealMqConnection();
             //if (isConn)
@@ -102,7 +102,7 @@ namespace MSTTS
                 else
                 {
                     LogMessage("MQ服务器未连接！");
-                    LogHelper.WriteLog(typeof(MainForm), "打开MQ网站出错");//日志测试  20180319
+                    LogHelper.WriteLog(typeof(MainForm), "打开MQ网站出错","2");//日志测试  20180319
                     isConn = false;
                     //连接异常
                     m_consumer.Close();
@@ -192,7 +192,7 @@ namespace MSTTS
             }
             catch (Exception ex)
             {
-                LogHelper.WriteLog(typeof(MainForm), "配置文件打开失败");//日志测试  20180319
+                LogHelper.WriteLog(typeof(MainForm), "配置文件打开失败","2");//日志测试  20180319
                 return false;
             }
             return true;
@@ -217,7 +217,7 @@ namespace MSTTS
             catch (System.Exception ex)
             {
                 isConn = false;
-                LogHelper.WriteLog(typeof(MainForm), "连接MQ服务器异常，请检查端口号、IP地址、用户名及密码是否正确！");//日志测试  20180319
+                LogHelper.WriteLog(typeof(MainForm), "连接MQ服务器异常，请检查端口号、IP地址、用户名及密码是否正确！","2");//日志测试  20180319
             }
             return isConn;
         }
@@ -237,7 +237,7 @@ namespace MSTTS
             }
             catch (System.Exception ex)
             {
-                LogHelper.WriteLog(typeof(MainForm), "MQ生产者、消费者初始化失败！");//日志测试  20180319
+                LogHelper.WriteLog(typeof(MainForm), "MQ生产者、消费者初始化失败！","2");//日志测试  20180319
             }
         }
 
@@ -259,11 +259,11 @@ namespace MSTTS
                 int sumSeconds = Convert.ToInt32(ts3.TotalSeconds.ToString().Split('.')[0]); //得到相差秒数  
                 if (sumSeconds > SingletonInfo.GetInstance().FaultTime) //判断时间差是不是大于给定值
                 {
-                    LogHelper.WriteLog(typeof(MainForm), "MQ过时信息打印：" + strMsg);
+                    LogHelper.WriteLog(typeof(MainForm), "MQ过时信息打印：" + strMsg,"4");
                     return;
                 }
 
-                LogHelper.WriteLog(typeof(MainForm), "MQ接收信息打印：" + strMsg);
+                LogHelper.WriteLog(typeof(MainForm), "MQ接收信息打印：" + strMsg,"4");
                 LogMessage("MQ接收信息打印：" + strMsg);
                 Application.DoEvents();
                 ThreadPool.QueueUserWorkItem(new WaitCallback(DealMessage), strMsg);
@@ -272,32 +272,39 @@ namespace MSTTS
             catch (System.Exception ex)
             {
                 m_consumer.Close();
-                LogHelper.WriteLog(typeof(MainForm), "MQ数据处理异常：" + ex.ToString());
+                LogHelper.WriteLog(typeof(MainForm), "MQ数据处理异常：" + ex.ToString(),"2");
                 GC.Collect();
             }
         }
 
         private void DealMessage(object str)
         {
-            string strMsg = (string)str;
-            string contenettmp = "";
-            string file = "";
-
-            if (strMsg.Contains("PACKTYPE") && strMsg.Contains("CONTENT") && strMsg.Contains("FILE"))//防止误收
+            try
             {
-                string[] commandsection = strMsg.Split('|');
-                foreach (string item in commandsection)
+                string strMsg = (string)str;
+                string contenettmp = "";
+                string file = "";
+
+                if (strMsg.Contains("PACKTYPE") && strMsg.Contains("CONTENT") && strMsg.Contains("FILE"))//防止误收
                 {
-                    if (item.Contains("CONTENT"))
+                    string[] commandsection = strMsg.Split('|');
+                    foreach (string item in commandsection)
                     {
-                        contenettmp = item.Split('~')[1];
+                        if (item.Contains("CONTENT"))
+                        {
+                            contenettmp = item.Split('~')[1];
+                        }
+                        if (item.Contains("FILE"))
+                        {
+                            file = SingletonInfo.GetInstance()._path + "\\" + item.Split('~')[1];
+                        }
                     }
-                    if (item.Contains("FILE"))
-                    {
-                        file = SingletonInfo.GetInstance()._path + "\\" + item.Split('~')[1];
-                    }
+                    SaveFile(file, contenettmp);
                 }
-                SaveFile(file, contenettmp);
+            }
+            catch (Exception ex)
+            {
+                LogHelper.WriteLog(typeof(MainForm), "SaveFile：" + ex.ToString(),"2");
             }
         }
 
@@ -350,7 +357,7 @@ namespace MSTTS
             }
             catch (Exception ex)
             {
-                LogHelper.WriteLog(typeof(MainForm), "SaveFile处理异常：" + ex.ToString());
+                LogHelper.WriteLog(typeof(MainForm), "SaveFile处理异常：" + ex.ToString()+"----------"+ex.InnerException+"-------"+ex.StackTrace+"-------"+ex.Message,"2");
             }
         }
 
@@ -366,7 +373,7 @@ namespace MSTTS
             }
             catch (Exception ex)
             {
-                LogHelper.WriteLog(typeof(MainForm), "MQ通讯异常:" + ex.ToString());
+                LogHelper.WriteLog(typeof(MainForm), "MQ通讯异常:" + ex.ToString(),"2");
             }
         }
 
@@ -383,7 +390,7 @@ namespace MSTTS
             }
             catch (Exception ex)
             {
-                LogHelper.WriteLog(typeof(MainForm), "删除中间文件：" + str + "失败！");
+                LogHelper.WriteLog(typeof(MainForm), "删除中间文件：" + str + "失败！","2");
             }
 
         }
