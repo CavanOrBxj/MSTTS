@@ -36,7 +36,7 @@ namespace MSTTS
             {
                 MessageBox.Show("只能运行一个程序！", "请确定", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
                 Environment.Exit(0);//退出程序  
-                //Application.Exit();
+               
             }
             this.Load += MainForm_Load;
         }
@@ -189,6 +189,9 @@ namespace MSTTS
                 SingletonInfo.GetInstance().CheckMQInterval = Convert.ToInt32(ini.ReadValue("MQ", "CheckMQInterval")) * 1000;
                 SingletonInfo.GetInstance().FTPEnable = ini.ReadValue("FTPServer", "ftpEnable") == "0" ? false : true;
                 SingletonInfo.GetInstance().FaultTime = Convert.ToInt32(ini.ReadValue("FaultTime", "time")) * 60;
+
+                SingletonInfo.GetInstance().IsNationFlag= ini.ReadValue("ProtocalType", "type") == "0" ? false : true;
+              
             }
             catch (Exception ex)
             {
@@ -313,6 +316,15 @@ namespace MSTTS
             try
             {
                 DelFile(FileName);
+
+                if (SingletonInfo.GetInstance().IsNationFlag)
+                {
+                    string[] FileNamesp = FileName.Split('.');
+                    FileName = FileNamesp[0] + ".wav";
+
+                }
+               
+
                 SpeechVoiceSpeakFlags SpFlags = SpeechVoiceSpeakFlags.SVSFlagsAsync;
                 SpVoice Voice = new SpVoice();
                 Voice.Rate = SingletonInfo.GetInstance()._rate;
@@ -342,14 +354,44 @@ namespace MSTTS
                 float dirTime = (float)MyFileInfo.Length / 32000;
 
                 string[] filepathname = FileName.Split('\\');
-                string filenamesignal = filepathname[filepathname.Length - 1];
+                string filenamesignal = "";
+                if (SingletonInfo.GetInstance().IsNationFlag)
+                {
+                    filenamesignal = filepathname[filepathname.Length - 1].Split('.')[0] + ".mp3";
+                }
+                else
+                {
+                    filenamesignal= filepathname[filepathname.Length - 1];
+                }
+                 
+
+                
                 string senddata = "PACKETTYPE~TTS|FILE~" + filenamesignal + "|TIME~" + ((uint)dirTime).ToString();
                 LogMessage(senddata);
+
+                #region  如果是需要mp3文件  则需要调用ffmepg
+                if (SingletonInfo.GetInstance().IsNationFlag)
+                {
+                    //转换MP3 
+                    string wavfilename = filenamesignal.Replace(".mp3", ".wav");
+                    string fromMusic = SingletonInfo.GetInstance()._path + "\\" + wavfilename;//转换音乐路径 
+                    string toMusic = SingletonInfo.GetInstance()._path + "\\" + filenamesignal;//转换后音乐路径 
+                    int bitrate = 128 * 1000;//恒定码率 
+                    string Hz = "44100";//采样频率 
+                    ExcuteProcess("ffmpeg.exe", "-y -ab " + bitrate + " -ar " + Hz + " -i \"" + fromMusic + "\" \"" + toMusic + "\"");
+
+                  //  Thread.Sleep(100);
+                    File.Delete(fromMusic);
+                    //转换完成 
+                }
+                #endregion
+
+
                 #region ftp文件传输  20190107新增
                 if (SingletonInfo.GetInstance().FTPEnable)
                 {
                     string ftppath = filenamesignal;
-                    string path = filename;
+                    string path = SingletonInfo.GetInstance()._path + "\\" + filenamesignal;
                     SingletonInfo.GetInstance().ftphelper.UploadFile(path, ftppath);//阻塞式非线程模式
                 }
                 #endregion
@@ -358,6 +400,23 @@ namespace MSTTS
             catch (Exception ex)
             {
                 LogHelper.WriteLog(typeof(MainForm), "SaveFile处理异常：" + ex.ToString()+"----------"+ex.InnerException+"-------"+ex.StackTrace+"-------"+ex.Message,"2");
+            }
+        }
+
+
+        public void ExcuteProcess(string exe, string arg)
+        {
+            using (var p = new Process())
+            {
+                p.StartInfo.FileName = exe;
+                p.StartInfo.Arguments = arg;
+                p.StartInfo.UseShellExecute = false;    //输出信息重定向 
+                p.StartInfo.CreateNoWindow = true;
+                p.StartInfo.RedirectStandardError = true;
+                p.StartInfo.RedirectStandardOutput = true;
+                p.Start();                    //启动线程 
+
+                p.WaitForExit();//等待进程结束   
             }
         }
 
@@ -422,6 +481,16 @@ namespace MSTTS
             }
 
             return flag;
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            string pp = "D:\\media\\131999423101079411.mp3";
+
+
+            string content = "现在是文转语测试现在是文转语测试现在是文转语测试现在是文转语测试现在是文转语测试现在是文转语测试现在是文转语测试现在是文转语测试现在是文转语测试现在是文转语测试现在是文转语测试";
+
+            SaveFile(pp, content);
         }
     }
 }

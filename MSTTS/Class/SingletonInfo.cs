@@ -34,6 +34,9 @@ namespace MSTTS
 
         public MQ m_mq;//
 
+        public bool IsNationFlag;//是否国标处理
+    
+
         private SingletonInfo()                                                                 
         {
             IsMQConnection = false;
@@ -52,6 +55,8 @@ namespace MSTTS
             FaultTime = 0;
             FTPEnable = false;
             m_mq = null;
+
+            IsNationFlag = false;
         }
         public static SingletonInfo GetInstance()
         {
